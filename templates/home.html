@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recipe AI Assistant - Find Your Perfect Recipe</title>
-    <meta name="description" content="AI-powered recipe search assistant. Find recipes by name or ingredients instantly.">
+    <meta name="description"
+        content="AI-powered recipe search assistant. Find recipes by name or ingredients instantly.">
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Dancing+Script:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
     <!-- Header -->
     <header class="header">
@@ -32,7 +37,7 @@
             <section class="search-section">
                 <div class="search-card">
                     <h2>What would you like to cook today?</h2>
-                    
+
                     <!-- Search Type Toggle -->
                     <div class="search-type-toggle">
                         <button class="toggle-btn active" data-type="recipe" id="recipeBtn">
@@ -48,13 +53,8 @@
                     <!-- Search Form -->
                     <form id="searchForm" class="search-form">
                         <div class="input-group">
-                            <input 
-                                type="text" 
-                                id="searchInput" 
-                                class="search-input" 
-                                placeholder="Enter recipe name (e.g., Chicken Biryani)"
-                                required
-                            >
+                            <input type="text" id="searchInput" class="search-input"
+                                placeholder="Enter recipe name (e.g., Chicken Biryani)" required>
                             <button type="submit" class="search-btn" id="searchBtn">
                                 <span class="btn-text">Search</span>
                                 <span class="btn-loader" style="display: none;">
@@ -81,28 +81,6 @@
                     </div>
                 </div>
             </section>
-
-            <!-- Features Section -->
-            <section class="features-section">
-                <h2 class="section-title">How It Works</h2>
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">🔍</div>
-                        <h3>Smart Search</h3>
-                        <p>Search by recipe name or available ingredients using AI-powered search</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">📝</div>
-                        <h3>Detailed Instructions</h3>
-                        <p>Get complete recipes with ingredients, measurements, and step-by-step instructions</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">💡</div>
-                        <h3>Smart Suggestions</h3>
-                        <p>Discover new recipes based on what you have in your kitchen</p>
-                    </div>
-                </div>
-            </section>
         </div>
     </main>
 
@@ -115,4 +93,5 @@
 
     <script src="{% static 'js/main.js' %}"></script>
 </body>
+
 </html>

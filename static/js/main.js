@@ -90,13 +90,10 @@ async function handleSearch(e) {
 }
 
 /**
- * Display search results
+ * Display search results with formatted recipe cards
  */
 function displayResults(data) {
     const resultText = data.result || 'No results found';
-
-    // Format the result text
-    const formattedResult = formatResult(resultText);
 
     // Update title based on search type
     if (currentSearchType === 'recipe') {
@@ -105,8 +102,11 @@ function displayResults(data) {
         resultsTitle.textContent = `Recipes with: ${data.query}`;
     }
 
+    // Parse and format the result
+    const formattedHTML = parseRecipe(resultText);
+
     // Display results
-    resultsContent.innerHTML = formattedResult;
+    resultsContent.innerHTML = formattedHTML;
     resultsSection.style.display = 'block';
 
     // Smooth scroll to results
@@ -114,21 +114,127 @@ function displayResults(data) {
 }
 
 /**
- * Format the result text with HTML
+ * Parse AI response and create formatted recipe HTML
  */
-function formatResult(text) {
-    // Split by double newlines to get sections
-    let formatted = text
-        .replace(/\n\n/g, '<br><br>')
-        .replace(/\n/g, '<br>');
+function parseRecipe(text) {
+    // Split into multiple recipes if present (for ingredient search)
+    const recipes = text.split(/(?=Recipe \d+:|^\d+\.\s+\*\*)/m);
 
-    // Bold section headers (lines ending with :)
-    formatted = formatted.replace(/^(.+:)$/gm, '<strong>$1</strong>');
+    let html = '';
 
-    // Highlight recipe names (assuming they're in quotes or start with numbers)
-    formatted = formatted.replace(/(\d+\.\s+)([^<\n]+)/g, '$1<strong style="color: var(--primary-color);">$2</strong>');
+    recipes.forEach((recipeText, index) => {
+        if (!recipeText.trim()) return;
 
-    return formatted;
+        // Extract recipe name
+        const nameMatch = recipeText.match(/(?:Recipe Name:|^\d+\.\s+\*\*|Recipe \d+:)\s*(.+?)(?:\n|$)/i);
+        const recipeName = nameMatch ? nameMatch[1].replace(/\*\*/g, '').trim() : `Recipe ${index + 1}`;
+
+        // Extract ingredients
+        const ingredientsMatch = recipeText.match(/(?:Ingredients?|Required Ingredients?)[\s:]*\n([\s\S]*?)(?=\n\n|Instructions?|Preparation|Steps|Important|$)/i);
+        const ingredientsText = ingredientsMatch ? ingredientsMatch[1] : '';
+        const ingredients = extractListItems(ingredientsText);
+
+        // Extract instructions
+        const instructionsMatch = recipeText.match(/(?:Instructions?|Steps|Preparation|Method)[\s:]*\n([\s\S]*?)(?=\n\n|Important|Notes|Tips|$)/i);
+        const instructionsText = instructionsMatch ? instructionsMatch[1] : '';
+        const instructions = extractListItems(instructionsText);
+
+        // Extract important notes
+        const notesMatch = recipeText.match(/(?:Important Notes?|Tips?|Notes?)[\s:]*\n([\s\S]*?)$/i);
+        const notes = notesMatch ? notesMatch[1].trim() : '';
+
+        // Build HTML for this recipe
+        html += buildRecipeCard(recipeName, ingredients, instructions, notes);
+
+        // Add separator if multiple recipes
+        if (index < recipes.length - 1 && recipes.length > 1) {
+            html += '<div class="recipe-separator"></div>';
+        }
+    });
+
+    // If parsing failed, show raw text in a nice format
+    if (!html.trim()) {
+        html = `<div class="recipe-card"><div class="notes-content">${text.replace(/\n/g, '<br>')}</div></div>`;
+    }
+
+    return html;
+}
+
+/**
+ * Extract list items from text
+ */
+function extractListItems(text) {
+    if (!text) return [];
+
+    const lines = text.split('\n');
+    const items = [];
+
+    lines.forEach(line => {
+        line = line.trim();
+        // Match numbered lists, bullet points, or dashes
+        const match = line.match(/^(?:\d+[\.)]\s*|[-•*]\s*)(.+)/);
+        if (match) {
+            items.push(match[1].trim());
+        } else if (line && !line.match(/^(?:Ingredients?|Instructions?|Steps|Notes?|Tips?)/i)) {
+            items.push(line);
+        }
+    });
+
+    return items.filter(item => item.length > 0);
+}
+
+/**
+ * Build HTML for a recipe card
+ */
+function buildRecipeCard(name, ingredients, instructions, notes) {
+    let html = '<div class="recipe-card">';
+
+    // Recipe Name
+    html += `<h2 class="recipe-name">${escapeHtml(name)}</h2>`;
+
+    // Ingredients
+    if (ingredients.length > 0) {
+        html += '<div class="ingredients-box">';
+        html += '<div class="section-header">INGREDIENTS:</div>';
+        html += '<ul class="ingredients-list">';
+        ingredients.forEach(ingredient => {
+            html += `<li>${escapeHtml(ingredient)}</li>`;
+        });
+        html += '</ul>';
+        html += '</div>';
+    }
+
+    // Instructions
+    if (instructions.length > 0) {
+        html += '<div class="instructions-box">';
+        html += '<div class="section-header">INSTRUCTIONS:</div>';
+        html += '<ol class="instructions-list">';
+        instructions.forEach(instruction => {
+            html += `<li>${escapeHtml(instruction)}</li>`;
+        });
+        html += '</ol>';
+        html += '</div>';
+    }
+
+    // Important Notes
+    if (notes) {
+        html += '<div class="notes-box">';
+        html += '<div class="section-header">IMPORTANT NOTES:</div>';
+        html += `<div class="notes-content">${escapeHtml(notes).replace(/\n/g, '<br>')}</div>`;
+        html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 /**
@@ -165,22 +271,11 @@ function showError(message) {
     resultsTitle.textContent = 'Error';
     resultsContent.innerHTML = `
         <div class="error-message">
-            <strong>⚠️ Error:</strong> ${message}
+            <strong>⚠️ Error:</strong> ${escapeHtml(message)}
         </div>
     `;
     resultsSection.style.display = 'block';
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-/**
- * Show success message
- */
-function showSuccess(message) {
-    resultsContent.innerHTML = `
-        <div class="success-message">
-            <strong>✓ Success:</strong> ${message}
-        </div>
-    `;
 }
 
 // ==================== Initialize ====================
